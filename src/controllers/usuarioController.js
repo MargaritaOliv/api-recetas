@@ -1,5 +1,5 @@
 const db = require('../configs/db/db');
-const { Usuario } = require('../models/usuarioModel'); 
+const  Usuario  = require('../models/usuarioModel'); 
 
 class UsuarioController {
   

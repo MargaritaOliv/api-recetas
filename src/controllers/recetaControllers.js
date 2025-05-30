@@ -1,5 +1,5 @@
 const db = require('../configs/db/db'); 
-const { Receta } = require('../models/recetaModel');
+const  Receta  = require('../models/recetaModel');
 
 class RecetaController {
     

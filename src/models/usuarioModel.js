@@ -1,4 +1,4 @@
-export class Usuario {
+class Usuario {
   constructor({ id = null, correo, contrasena, nombre_usuario }) {
     this.id = id;
     this.correo = correo;
@@ -6,3 +6,5 @@ export class Usuario {
     this.nombre_usuario = nombre_usuario;
   }
 }
+
+module.exports = Usuario;

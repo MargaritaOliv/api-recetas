@@ -1,4 +1,4 @@
-export class Receta {
+class Receta {
   constructor({ id = null, nombre, ingredientes, pasos, tiempo_preparacion }) {
     this.id = id;
     this.nombre = nombre;
@@ -7,3 +7,5 @@ export class Receta {
     this.tiempo_preparacion = tiempo_preparacion;
   }
 }
+
+module.exports = Receta;
