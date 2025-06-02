@@ -1,15 +1,18 @@
 const express = require('express');
 const router = express.Router();
-const RecetaController = require('../controllers/recetaControllers'); 
+const RecetaController = require('../controllers/recetaController'); 
+const authMiddleware = require('../middleware/authMiddleware');
 
-router.post('/crear', RecetaController.create);
+router.post('/crear', authMiddleware,RecetaController.create);
 
-router.get('/obtener', RecetaController.getAll);
+router.get('/obtener', authMiddleware, RecetaController.getAll);
 
-router.get('/obtener/:id', RecetaController.getById);
+router.get('/recetas', authMiddleware, RecetaController.getByUsuarioToken);
 
-router.put('/actualizar/:id', RecetaController.update);
+router.get('/obtener/:id', authMiddleware, RecetaController.getById);
 
-router.delete('/eliminar/:id', RecetaController.delete);
+router.put('/actualizar/:id', authMiddleware, RecetaController.update);
+
+router.delete('/eliminar/:id', authMiddleware, RecetaController.delete);
 
 module.exports = router;

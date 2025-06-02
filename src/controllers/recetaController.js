@@ -1,10 +1,11 @@
-const db = require('../configs/db/db'); 
-const  Receta  = require('../models/recetaModel');
+const db = require('../configs/db/db');
+const Receta = require('../models/recetaModel');
 
 class RecetaController {
-    
+
   static create(req, res) {
     const { nombre, ingredientes, pasos, tiempo_preparacion } = req.body;
+    const usuario_id = req.userId; 
 
     if (!nombre || !ingredientes || !pasos || !tiempo_preparacion) {
       return res.status(400).json({ error: 'Faltan datos obligatorios' });
@@ -13,11 +14,18 @@ class RecetaController {
     const ingredientesJSON = JSON.stringify(ingredientes);
     const pasosJSON = JSON.stringify(pasos);
 
-    const sql = `INSERT INTO recetas (nombre, ingredientes, pasos, tiempo_preparacion) VALUES (?, ?, ?, ?)`;
-    db.query(sql, [nombre, ingredientesJSON, pasosJSON, tiempo_preparacion], (err, result) => {
+    const sql = `INSERT INTO recetas (nombre, ingredientes, pasos, tiempo_preparacion, usuario_id) VALUES (?, ?, ?, ?, ?)`;
+    db.query(sql, [nombre, ingredientesJSON, pasosJSON, tiempo_preparacion, usuario_id], (err, result) => {
       if (err) return res.status(500).json({ error: err.message });
-      // Crear instancia con id generado
-      const nuevaReceta = new Receta({ id: result.insertId, nombre, ingredientes, pasos, tiempo_preparacion });
+
+      const nuevaReceta = new Receta({
+        id: result.insertId,
+        nombre,
+        ingredientes,
+        pasos,
+        tiempo_preparacion
+      });
+
       res.status(201).json({ message: 'Receta creada', receta: nuevaReceta });
     });
   }
@@ -26,6 +34,7 @@ class RecetaController {
     const sql = `SELECT * FROM recetas`;
     db.query(sql, (err, results) => {
       if (err) return res.status(500).json({ error: err.message });
+
       const recetas = results.map(r => new Receta({
         id: r.id,
         nombre: r.nombre,
@@ -33,6 +42,7 @@ class RecetaController {
         pasos: JSON.parse(r.pasos),
         tiempo_preparacion: r.tiempo_preparacion
       }));
+
       res.json(recetas);
     });
   }
@@ -52,7 +62,27 @@ class RecetaController {
         pasos: JSON.parse(r.pasos),
         tiempo_preparacion: r.tiempo_preparacion
       });
+
       res.json(receta);
+    });
+  }
+
+  static getByUsuarioToken(req, res) {
+    const usuario_id = req.userId;
+
+    const sql = `SELECT * FROM recetas WHERE usuario_id = ?`;
+    db.query(sql, [usuario_id], (err, results) => {
+      if (err) return res.status(500).json({ error: err.message });
+
+      const recetas = results.map(r => new Receta({
+        id: r.id,
+        nombre: r.nombre,
+        ingredientes: JSON.parse(r.ingredientes),
+        pasos: JSON.parse(r.pasos),
+        tiempo_preparacion: r.tiempo_preparacion
+      }));
+
+      res.json(recetas);
     });
   }
 
@@ -71,6 +101,7 @@ class RecetaController {
     db.query(sql, [nombre, ingredientesJSON, pasosJSON, tiempo_preparacion, id], (err, result) => {
       if (err) return res.status(500).json({ error: err.message });
       if (result.affectedRows === 0) return res.status(404).json({ error: 'Receta no encontrada' });
+
       res.json({ message: 'Receta actualizada' });
     });
   }
@@ -81,6 +112,7 @@ class RecetaController {
     db.query(sql, [id], (err, result) => {
       if (err) return res.status(500).json({ error: err.message });
       if (result.affectedRows === 0) return res.status(404).json({ error: 'Receta no encontrada' });
+
       res.json({ message: 'Receta eliminada' });
     });
   }
