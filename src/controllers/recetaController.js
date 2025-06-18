@@ -250,6 +250,7 @@ class RecetaController {
           console.log('Error al eliminar imagen de S3:', s3Error);
         }
       }
+      
 
       const deleteSql = `DELETE FROM recetas WHERE id = ?`;
       db.query(deleteSql, [id], (err, result) => {

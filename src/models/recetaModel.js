@@ -19,4 +19,5 @@ class Receta {
   }
 }
 
+
 module.exports = Receta;
