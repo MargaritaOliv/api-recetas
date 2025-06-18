@@ -7,7 +7,7 @@ const usuarioRoutes = require('./src/routes/usuarioRoutes');
 const authRoutes = require('./src/routes/authRoutes')
 
 const app = express();
-
+//asdasdasd
 app.use(bodyParser.json());
 app.use(cors());  
 
