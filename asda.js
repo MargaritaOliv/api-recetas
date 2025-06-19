@@ -4,7 +4,6 @@ const AWS = require('aws-sdk');
 
 console.log('🔧 Probando configuración AWS S3...\n');
 
-// Mostrar variables de entorno (censuradas)
 console.log('Variables de entorno:');
 console.log('AWS_ACCESS_KEY_ID:', process.env.AWS_ACCESS_KEY_ID ? process.env.AWS_ACCESS_KEY_ID.substring(0, 10) + '...' : 'NO DEFINIDA');
 console.log('AWS_SECRET_ACCESS_KEY:', process.env.AWS_SECRET_ACCESS_KEY ? process.env.AWS_SECRET_ACCESS_KEY.substring(0, 10) + '...' : 'NO DEFINIDA');
