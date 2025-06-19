@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crear Receta - Prueba API</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .form-container {
+            padding: 40px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 1.1rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e8ed;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea.form-control {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .token-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        .token-section h3 {
+            color: #495057;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .file-upload {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-upload input[type=file] {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .file-upload-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            padding: 40px;
+            border: 3px dashed #667eea;
+            border-radius: 10px;
+            background: #f8f9ff;
+            color: #667eea;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .file-upload-label:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .array-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .array-input input {
+            flex: 1;
+        }
+
+        .btn-add {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-add:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .btn-remove {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-remove:hover {
+            background: #c82333;
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 20px 40px;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .response {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .response.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .response.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .preview-image {
+            max-width: 200px;
+            max-height: 200px;
+            margin-top: 15px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .api-endpoint {
+            background: #e9ecef;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            margin-top: 10px;
+            border-left: 4px solid #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🍳 Crear Receta</h1>
+            <p>Prueba tu API de recetas con imagen</p>
+        </div>
+
+        <div class="form-container">
+            <!-- Sección del Token -->
+            <div class="token-section">
+                <h3>🔐 Configuración de Autenticación</h3>
+                <div class="form-group">
+                    <label for="apiUrl">URL de tu API:</label>
+                    <input type="text" id="apiUrl" class="form-control" 
+                           value="http://localhost:3003/api/recetas/crear" 
+                           placeholder="http://localhost:3003/api/recetas/crear">
+                </div>
+                <div class="form-group">
+                    <label for="token">Token JWT:</label>
+                    <input type="text" id="token" class="form-control" 
+                           placeholder="Pega aquí tu token JWT del login">
+                </div>
+            </div>
+
+            <form id="recetaForm">
+                <!-- Nombre de la receta -->
+                <div class="form-group">
+                    <label for="nombre">📝 Nombre de la Receta:</label>
+                    <input type="text" id="nombre" class="form-control" 
+                           placeholder="Ej: Tacos de Pollo al Pastor" required>
+                </div>
+
+                <!-- Imagen -->
+                <div class="form-group">
+                    <label>📸 Imagen de la Receta (opcional):</label>
+                    <div class="file-upload">
+                        <input type="file" id="imagen" accept="image/*">
+                        <label for="imagen" class="file-upload-label">
+                            <span>📷 Seleccionar Imagen</span>
+                            <span>o arrastra aquí tu imagen</span>
+                        </label>
+                    </div>
+                    <img id="imagePreview" class="preview-image" style="display: none;">
+                </div>
+
+                <!-- Ingredientes -->
+                <div class="form-group">
+                    <label>🥘 Ingredientes:</label>
+                    <div id="ingredientesContainer">
+                        <div class="array-input">
+                            <input type="text" class="form-control ingrediente" 
+                                   placeholder="Ej: 500g de pollo">
+                            <button type="button" class="btn-remove" onclick="removeInput(this)">❌</button>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-add" onclick="addIngrediente()">
+                        ➕ Agregar Ingrediente
+                    </button>
+                </div>
+
+                <!-- Pasos -->
+                <div class="form-group">
+                    <label>👨‍🍳 Pasos de Preparación:</label>
+                    <div id="pasosContainer">
+                        <div class="array-input">
+                            <input type="text" class="form-control paso" 
+                                   placeholder="Ej: Marinar el pollo con especias">
+                            <button type="button" class="btn-remove" onclick="removeInput(this)">❌</button>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-add" onclick="addPaso()">
+                        ➕ Agregar Paso
+                    </button>
+                </div>
+
+                <!-- Tiempo de preparación -->
+                <div class="form-group">
+                    <label for="tiempo">⏱️ Tiempo de Preparación:</label>
+                    <input type="text" id="tiempo" class="form-control" 
+                           placeholder="Ej: 45 minutos" required>
+                </div>
+
+                <button type="submit" class="submit-btn" id="submitBtn">
+                    🚀 Crear Receta
+                </button>
+            </form>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Creando tu receta...</p>
+            </div>
+
+            <div class="response" id="response"></div>
+
+            <div class="api-endpoint">
+                <strong>Endpoint:</strong> <span id="currentEndpoint">POST /api/recetas/crear</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Preview de imagen
+        document.getElementById('imagen').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const preview = document.getElementById('imagePreview');
+            const label = document.querySelector('.file-upload-label');
+            
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                    label.innerHTML = `<span>✅ ${file.name}</span><span>Haz clic para cambiar</span>`;
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Actualizar endpoint cuando cambie la URL
+        document.getElementById('apiUrl').addEventListener('input', function(e) {
+            document.getElementById('currentEndpoint').textContent = e.target.value;
+        });
+
+        // Funciones para agregar/quitar ingredientes
+        function addIngrediente() {
+            const container = document.getElementById('ingredientesContainer');
+            const div = document.createElement('div');
+            div.className = 'array-input';
+            div.innerHTML = `
+                <input type="text" class="form-control ingrediente" placeholder="Ej: 1 taza de arroz">
+                <button type="button" class="btn-remove" onclick="removeInput(this)">❌</button>
+            `;
+            container.appendChild(div);
+        }
+
+        // Funciones para agregar/quitar pasos
+        function addPaso() {
+            const container = document.getElementById('pasosContainer');
+            const div = document.createElement('div');
+            div.className = 'array-input';
+            div.innerHTML = `
+                <input type="text" class="form-control paso" placeholder="Ej: Cocinar a fuego medio por 10 minutos">
+                <button type="button" class="btn-remove" onclick="removeInput(this)">❌</button>
+            `;
+            container.appendChild(div);
+        }
+
+        // Remover input
+        function removeInput(button) {
+            button.parentElement.remove();
+        }
+
+        // Enviar formulario
+        document.getElementById('recetaForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const loading = document.getElementById('loading');
+            const response = document.getElementById('response');
+            const token = document.getElementById('token').value;
+            const apiUrl = document.getElementById('apiUrl').value;
+            
+            // Validar token
+            if (!token) {
+                showResponse('error', 'Por favor ingresa un token JWT válido');
+                return;
+            }
+            
+            // Preparar datos
+            const formData = new FormData();
+            
+            // Agregar campos básicos
+            formData.append('nombre', document.getElementById('nombre').value);
+            formData.append('tiempo_preparacion', document.getElementById('tiempo').value);
+            
+            // Agregar imagen si existe
+            const imagenFile = document.getElementById('imagen').files[0];
+            if (imagenFile) {
+                formData.append('imagen', imagenFile);
+            }
+            
+            // Recopilar ingredientes
+            const ingredientes = Array.from(document.querySelectorAll('.ingrediente'))
+                .map(input => input.value.trim())
+                .filter(value => value !== '');
+            formData.append('ingredientes', JSON.stringify(ingredientes));
+            
+            // Recopilar pasos
+            const pasos = Array.from(document.querySelectorAll('.paso'))
+                .map(input => input.value.trim())
+                .filter(value => value !== '');
+            formData.append('pasos', JSON.stringify(pasos));
+            
+            // Validar datos
+            if (ingredientes.length === 0) {
+                showResponse('error', 'Debes agregar al menos un ingrediente');
+                return;
+            }
+            
+            if (pasos.length === 0) {
+                showResponse('error', 'Debes agregar al menos un paso');
+                return;
+            }
+            
+            // Mostrar loading
+            submitBtn.disabled = true;
+            loading.style.display = 'block';
+            response.style.display = 'none';
+            
+            try {
+                const fetchResponse = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+                
+                const result = await fetchResponse.json();
+                
+                if (fetchResponse.ok) {
+                    showResponse('success', `
+                        <h4>✅ ¡Receta creada exitosamente!</h4>
+                        <p><strong>ID:</strong> ${result.receta.id}</p>
+                        <p><strong>Nombre:</strong> ${result.receta.nombre}</p>
+                        ${result.imagen_url ? `<p><strong>Imagen:</strong> <a href="${result.imagen_url}" target="_blank">Ver imagen</a></p>` : ''}
+                        <pre style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 15px; overflow-x: auto;">${JSON.stringify(result, null, 2)}</pre>
+                    `);
+                    
+                    // Limpiar formulario
+                    document.getElementById('recetaForm').reset();
+                    document.getElementById('imagePreview').style.display = 'none';
+                    document.querySelector('.file-upload-label').innerHTML = `
+                        <span>📷 Seleccionar Imagen</span>
+                        <span>o arrastra aquí tu imagen</span>
+                    `;
+                } else {
+                    showResponse('error', `
+                        <h4>❌ Error al crear receta</h4>
+                        <p><strong>Status:</strong> ${fetchResponse.status}</p>
+                        <p><strong>Error:</strong> ${result.error || 'Error desconocido'}</p>
+                        <pre style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 15px; overflow-x: auto;">${JSON.stringify(result, null, 2)}</pre>
+                    `);
+                }
+            } catch (error) {
+                showResponse('error', `
+                    <h4>❌ Error de conexión</h4>
+                    <p>No se pudo conectar con la API. Verifica que:</p>
+                    <ul style="margin-left: 20px; margin-top: 10px;">
+                        <li>Tu servidor esté corriendo</li>
+                        <li>La URL sea correcta</li>
+                        <li>No haya problemas de CORS</li>
+                    </ul>
+                    <p><strong>Error técnico:</strong> ${error.message}</p>
+                `);
+            } finally {
+                submitBtn.disabled = false;
+                loading.style.display = 'none';
+            }
+        });
+        
+        function showResponse(type, message) {
+            const response = document.getElementById('response');
+            response.className = `response ${type}`;
+            response.innerHTML = message;
+            response.style.display = 'block';
+            response.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // Agregar algunos ingredientes y pasos por defecto
+        window.addEventListener('load', function() {
+            // Agregar 2 ingredientes más por defecto
+            addIngrediente();
+            addIngrediente();
+            
+            // Agregar 2 pasos más por defecto
+            addPaso();
+            addPaso();
+        });
+    </script>
+</body>
+</html>

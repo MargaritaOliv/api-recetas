@@ -18,7 +18,8 @@ class UsuarioController {
         });
       }
 
-      const imagen = req.file ? req.file.location : null;
+      // CAMBIO: usar imagen_usuario en lugar de imagen
+      const imagen_usuario = req.file ? req.file.location : null;
       
       const { correo, contrasena, nombre_usuario } = req.body;
 
@@ -31,9 +32,9 @@ class UsuarioController {
         db.query(checkSql, [correo], async (err, results) => {
           if (err) return res.status(500).json({ error: err.message });
           if (results.length > 0) {
-            if (imagen) {
+            if (imagen_usuario) {
               try {
-                const key = imagen.split('.amazonaws.com/')[1];
+                const key = imagen_usuario.split('.amazonaws.com/')[1];
                 await s3.deleteObject({
                   Bucket: 'mi-app-recetas-2025',
                   Key: key
@@ -47,8 +48,9 @@ class UsuarioController {
 
           const hashedPassword = await bcrypt.hash(contrasena, 10);
 
-          const insertSql = 'INSERT INTO usuarios (correo, contrasena, nombre_usuario, imagen) VALUES (?, ?, ?, ?)';
-          db.query(insertSql, [correo, hashedPassword, nombre_usuario, imagen], (err, result) => {
+          // CAMBIO: INSERT con imagen_usuario
+          const insertSql = 'INSERT INTO usuarios (correo, contrasena, nombre_usuario, imagen_usuario) VALUES (?, ?, ?, ?)';
+          db.query(insertSql, [correo, hashedPassword, nombre_usuario, imagen_usuario], (err, result) => {
             if (err) return res.status(500).json({ error: err.message });
 
             const nuevoUsuario = new Usuario({
@@ -56,13 +58,13 @@ class UsuarioController {
               correo,
               contrasena: hashedPassword,
               nombre_usuario,
-              imagen
+              imagen_usuario
             });
 
             res.status(201).json({ 
               mensaje: 'Usuario registrado correctamente',
               usuario: nuevoUsuario,
-              ...(imagen && { imagen_perfil: imagen })
+              ...(imagen_usuario && { imagen_perfil: imagen_usuario })
             });
           });
         });
@@ -79,6 +81,7 @@ class UsuarioController {
       return res.status(400).json({ error: 'Correo y contraseña son obligatorios' });
     }
 
+    // CAMBIO: SELECT incluyendo imagen_usuario
     const sql = 'SELECT * FROM usuarios WHERE correo = ?';
     db.query(sql, [correo], async (err, results) => {
       if (err) return res.status(500).json({ error: err.message });
@@ -98,14 +101,14 @@ class UsuarioController {
         correo: usuario.correo,
         contrasena: usuario.contrasena,
         nombre_usuario: usuario.nombre_usuario,
-        imagen: usuario.imagen
+        imagen_usuario: usuario.imagen_usuario
       });
 
       const usuarioResponse = {
         id: usuarioModel.id,
         correo: usuarioModel.correo,
         nombre_usuario: usuarioModel.nombre_usuario,
-        imagen: usuarioModel.imagen
+        imagen_usuario: usuarioModel.imagen_usuario
       };
 
       res.status(200).json({ 
@@ -135,16 +138,17 @@ class UsuarioController {
       }
 
       try {
-        let nueva_imagen = null;
+        let nueva_imagen_usuario = null;
 
         if (req.file) {
-          nueva_imagen = req.file.location;
+          nueva_imagen_usuario = req.file.location;
           
-          const selectSql = 'SELECT imagen FROM usuarios WHERE id = ?';
+          // CAMBIO: SELECT imagen_usuario
+          const selectSql = 'SELECT imagen_usuario FROM usuarios WHERE id = ?';
           db.query(selectSql, [id], async (err, results) => {
-            if (!err && results.length > 0 && results[0].imagen) {
+            if (!err && results.length > 0 && results[0].imagen_usuario) {
               try {
-                const oldKey = results[0].imagen.split('.amazonaws.com/')[1];
+                const oldKey = results[0].imagen_usuario.split('.amazonaws.com/')[1];
                 await s3.deleteObject({
                   Bucket: 'mi-app-recetas-2025',
                   Key: oldKey
@@ -155,11 +159,11 @@ class UsuarioController {
             }
           });
         } else if (mantener_imagen === 'false') {
-          const selectSql = 'SELECT imagen FROM usuarios WHERE id = ?';
+          const selectSql = 'SELECT imagen_usuario FROM usuarios WHERE id = ?';
           db.query(selectSql, [id], async (err, results) => {
-            if (!err && results.length > 0 && results[0].imagen) {
+            if (!err && results.length > 0 && results[0].imagen_usuario) {
               try {
-                const oldKey = results[0].imagen.split('.amazonaws.com/')[1];
+                const oldKey = results[0].imagen_usuario.split('.amazonaws.com/')[1];
                 await s3.deleteObject({
                   Bucket: 'mi-app-recetas-2025',
                   Key: oldKey
@@ -169,7 +173,7 @@ class UsuarioController {
               }
             }
           });
-          nueva_imagen = null;
+          nueva_imagen_usuario = null;
         }
 
         let sql, params;
@@ -177,17 +181,18 @@ class UsuarioController {
         if (contrasena) {
           const hashedPassword = await bcrypt.hash(contrasena, 10);
           
-          if (nueva_imagen !== null || mantener_imagen === 'false') {
-            sql = 'UPDATE usuarios SET correo = ?, contrasena = ?, nombre_usuario = ?, imagen = ? WHERE id = ?';
-            params = [correo, hashedPassword, nombre_usuario, nueva_imagen, id];
+          if (nueva_imagen_usuario !== null || mantener_imagen === 'false') {
+            // CAMBIO: UPDATE imagen_usuario
+            sql = 'UPDATE usuarios SET correo = ?, contrasena = ?, nombre_usuario = ?, imagen_usuario = ? WHERE id = ?';
+            params = [correo, hashedPassword, nombre_usuario, nueva_imagen_usuario, id];
           } else {
             sql = 'UPDATE usuarios SET correo = ?, contrasena = ?, nombre_usuario = ? WHERE id = ?';
             params = [correo, hashedPassword, nombre_usuario, id];
           }
         } else {
-          if (nueva_imagen !== null || mantener_imagen === 'false') {
-            sql = 'UPDATE usuarios SET correo = ?, nombre_usuario = ?, imagen = ? WHERE id = ?';
-            params = [correo, nombre_usuario, nueva_imagen, id];
+          if (nueva_imagen_usuario !== null || mantener_imagen === 'false') {
+            sql = 'UPDATE usuarios SET correo = ?, nombre_usuario = ?, imagen_usuario = ? WHERE id = ?';
+            params = [correo, nombre_usuario, nueva_imagen_usuario, id];
           } else {
             sql = 'UPDATE usuarios SET correo = ?, nombre_usuario = ? WHERE id = ?';
             params = [correo, nombre_usuario, id];
@@ -200,7 +205,7 @@ class UsuarioController {
           
           res.status(200).json({ 
             mensaje: 'Usuario actualizado',
-            ...(nueva_imagen && { nueva_imagen_url: nueva_imagen })
+            ...(nueva_imagen_usuario && { nueva_imagen_url: nueva_imagen_usuario })
           });
         });
 
@@ -211,9 +216,10 @@ class UsuarioController {
   }
 
   static obtenerPerfil(req, res) {
-    const usuario_id = req.userId; 
+    const usuario_id = req.userId;
 
-    db.query('SELECT id, correo, nombre_usuario, imagen FROM usuarios WHERE id = ?', [usuario_id], (err, results) => {
+    // CAMBIO: SELECT imagen_usuario
+    db.query('SELECT id, correo, nombre_usuario, imagen_usuario FROM usuarios WHERE id = ?', [usuario_id], (err, results) => {
       if (err) return res.status(500).json({ error: err.message });
       if (results.length === 0) return res.status(404).json({ mensaje: 'Usuario no encontrado' });
       
@@ -227,7 +233,8 @@ class UsuarioController {
   }
 
   static obtenerUsuarios(req, res) {
-    db.query('SELECT id, correo, nombre_usuario, imagen FROM usuarios', (err, results) => {
+    // CAMBIO: SELECT imagen_usuario
+    db.query('SELECT id, correo, nombre_usuario, imagen_usuario FROM usuarios', (err, results) => {
       if (err) return res.status(500).json({ error: err.message });
       
       const usuarios = results.map(u => new Usuario(u));
@@ -238,13 +245,16 @@ class UsuarioController {
 
   static obtenerUsuarioPorId(req, res) {
     const { id } = req.params;
-    db.query('SELECT id, correo, nombre_usuario, imagen FROM usuarios WHERE id = ?', [id], (err, results) => {
+    // CAMBIO: SELECT imagen_usuario
+    db.query('SELECT id, correo, nombre_usuario, imagen_usuario FROM usuarios WHERE id = ?', [id], (err, results) => {
       if (err) return res.status(500).json({ error: err.message });
       if (results.length === 0) return res.status(404).json({ mensaje: 'Usuario no encontrado' });
       
+      const usuarioModel = new Usuario(results[0]);
+      
       res.status(200).json({
         mensaje: 'Usuario encontrado',
-        usuario: results[0]
+        usuario: usuarioModel
       });
     });
   }
@@ -252,16 +262,17 @@ class UsuarioController {
   static async eliminarUsuario(req, res) {
     const { id } = req.params;
     
-    const selectSql = 'SELECT imagen FROM usuarios WHERE id = ?';
+    // CAMBIO: SELECT imagen_usuario
+    const selectSql = 'SELECT imagen_usuario FROM usuarios WHERE id = ?';
     db.query(selectSql, [id], async (err, results) => {
       if (err) return res.status(500).json({ error: err.message });
       if (results.length === 0) return res.status(404).json({ mensaje: 'Usuario no encontrado' });
 
       const usuario = results[0];
       
-      if (usuario.imagen) {
+      if (usuario.imagen_usuario) {
         try {
-          const key = usuario.imagen.split('.amazonaws.com/')[1];
+          const key = usuario.imagen_usuario.split('.amazonaws.com/')[1];
           await s3.deleteObject({
             Bucket: 'mi-app-recetas-2025',
             Key: key
@@ -279,9 +290,5 @@ class UsuarioController {
     });
   }
 }
-
-
-
-
 
 module.exports = UsuarioController;
