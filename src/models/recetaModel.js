@@ -1,4 +1,3 @@
-
 class Receta {
   constructor({ 
     id = null, 
@@ -18,6 +17,5 @@ class Receta {
     this.imagen_receta = imagen_receta; 
   }
 }
-
 
 module.exports = Receta;

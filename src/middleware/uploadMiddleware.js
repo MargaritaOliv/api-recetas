@@ -1,121 +1,161 @@
-// src/middleware/uploadMiddleware.js
 const multer = require('multer');
-const multerS3 = require('multer-s3');
-const { v4: uuidv4 } = require('uuid');
-const AWS = require('aws-sdk');
+const ImageService = require('../service/imagenService');
 
-// Función para crear configuración S3 dinámicamente
-const createS3Instance = () => {
-  console.log('🔧 Creando nueva instancia de S3...');
-  
-  // Configurar AWS S3 con credenciales actuales
-  AWS.config.update({
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    sessionToken: process.env.AWS_SESSION_TOKEN,
-    region: process.env.AWS_REGION || 'us-east-1'
-  });
-
-  return new AWS.S3({
-    apiVersion: '2006-03-01',
-    signatureVersion: 'v4'
-  });
-};
-
-// Función para crear el middleware de upload dinámicamente
-const createUploadMiddleware = () => {
-  console.log('🔧 Creando middleware de upload...');
-  
-  return multer({
-    storage: multerS3({
-      s3: createS3Instance(), // Crear instancia fresca cada vez
-      bucket: 'mi-app-recetas-2025',
-      contentType: multerS3.AUTO_CONTENT_TYPE,
-      metadata: function (req, file, cb) {
-        cb(null, { 
-          fieldName: file.fieldname,
-          originalName: file.originalname 
-        });
-      },
-      key: function (req, file, cb) {
-        try {
-          const fileExtension = file.originalname.split('.').pop().toLowerCase();
-          const fileName = `${Date.now()}-${uuidv4()}.${fileExtension}`;
-          
-          // Determinar carpeta basada en la ruta
-          let folder = 'uploads';
-          if (req.route && req.route.path) {
-            if (req.route.path.includes('receta')) {
-              folder = 'recetas';
-            } else if (req.route.path.includes('usuario')) {
-              folder = 'usuarios';
-            }
-          }
-          
-          const key = `${folder}/${fileName}`;
-          console.log(`📁 Subiendo archivo: ${key}`);
-          cb(null, key);
-        } catch (error) {
-          console.error('Error generando key:', error);
-          cb(error);
-        }
-      }
-    }),
-    limits: {
-      fileSize: 5 * 1024 * 1024, // 5MB
-      files: 1
-    },
-    fileFilter: (req, file, cb) => {
-      console.log(`📄 Procesando archivo: ${file.originalname}, tipo: ${file.mimetype}`);
-      
-      if (file.mimetype.startsWith('image/')) {
-        cb(null, true);
-      } else {
-        cb(new Error('Solo se permiten archivos de imagen'), false);
-      }
+const uploadMiddleware = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024, 
+    files: 1
+  },
+  fileFilter: (req, file, cb) => {
+    console.log(`📄 Procesando archivo: ${file.originalname}, tipo: ${file.mimetype}`);
+    
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Solo se permiten archivos de imagen'), false);
     }
-  });
-};
+  }
+});
 
-// Función para probar la conexión con S3
-const testS3Connection = async () => {
+const handleRecipeImageUpload = async (req, res, next) => {
   try {
-    console.log('🔍 Probando conexión S3...');
-    const s3 = createS3Instance();
-    const result = await s3.listBuckets().promise();
-    console.log('✅ S3 conectado, buckets encontrados:', result.Buckets.map(b => b.Name));
-    return true;
+    if (!req.file) {
+      console.log('⚠️ No se recibió archivo de imagen');
+      return next();
+    }
+
+    console.log('🔍 Procesando imagen de receta...');
+    
+    const uploadResult = await ImageService.uploadImage(req.file);
+    
+    if (!uploadResult.success) {
+      console.error('❌ Error en ImageService:', uploadResult.error);
+      return res.status(400).json({
+        success: false,
+        message: 'Error al subir imagen',
+        error: uploadResult.error
+      });
+    }
+
+    req.imageUpload = {
+      imageUrl: uploadResult.imageUrl,
+      imageKey: uploadResult.imageKey
+    };
+
+    console.log('✅ Imagen procesada exitosamente');
+    console.log('✅ URL:', uploadResult.imageUrl);
+    next();
+
   } catch (error) {
-    console.error('❌ Error de conexión S3:', error.message);
-    console.error('Código de error:', error.code);
-    return false;
+    console.error('❌ Error en middleware de imagen:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno al procesar imagen',
+      error: error.message
+    });
   }
 };
 
-// Función para eliminar archivo de S3
-const deleteFromS3 = async (key) => {
+const handleBase64ImageUpload = async (req, res, next) => {
   try {
-    const s3 = createS3Instance();
-    await s3.deleteObject({
-      Bucket: 'mi-app-recetas-2025',
-      Key: key
-    }).promise();
-    console.log(`🗑️ Archivo eliminado de S3: ${key}`);
-    return true;
+    const { imagen_base64 } = req.body;
+    
+    if (!imagen_base64) {
+      console.log('⚠️ No se recibió imagen Base64');
+      return next();
+    }
+
+    console.log('🔍 Procesando imagen Base64...');
+    
+    if (!ImageService.isValidBase64Image(imagen_base64)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Formato de imagen Base64 inválido'
+      });
+    }
+
+    const uploadResult = await ImageService.uploadBase64Image(imagen_base64);
+    
+    if (!uploadResult.success) {
+      console.error('❌ Error en ImageService Base64:', uploadResult.error);
+      return res.status(400).json({
+        success: false,
+        message: 'Error al subir imagen Base64',
+        error: uploadResult.error
+      });
+    }
+
+    req.imageUpload = {
+      imageUrl: uploadResult.imageUrl,
+      imageKey: uploadResult.imageKey
+    };
+
+    delete req.body.imagen_base64;
+
+    console.log('✅ Imagen Base64 procesada exitosamente');
+    console.log('✅ URL:', uploadResult.imageUrl);
+    next();
+
   } catch (error) {
-    console.error(`❌ Error eliminando archivo ${key}:`, error.message);
-    return false;
+    console.error('❌ Error en middleware de imagen Base64:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno al procesar imagen Base64',
+      error: error.message
+    });
   }
 };
 
-const uploadToS3 = createUploadMiddleware();
-const s3 = createS3Instance();
+const cleanupImageOnError = (error, req, res, next) => {
+  if (req.imageUpload?.imageKey) {
+    console.log('🧹 Limpiando imagen debido a error...');
+    ImageService.deleteImage(req.imageUpload.imageKey)
+      .then(result => {
+        if (result.success) {
+          console.log('✅ Imagen limpiada exitosamente');
+        } else {
+          console.error('❌ Error limpiando imagen:', result.error);
+        }
+      })
+      .catch(cleanupError => {
+        console.error('❌ Error en cleanup:', cleanupError);
+      });
+  }
+  
+  next(error);
+};
 
-module.exports = { 
-  uploadToS3, 
-  s3,
-  createS3Instance,
-  createUploadMiddleware,
-  testS3Connection,
-  deleteFromS3 
+const uploadRecipeImage = [
+  uploadMiddleware.single('imagen_receta'),
+  handleRecipeImageUpload
+];
+
+const uploadRecipeBase64 = [
+  handleBase64ImageUpload
+];
+
+const validateImageServiceConfig = (req, res, next) => {
+  const validation = ImageService.validateConfiguration();
+  
+  if (!validation.valid) {
+    console.error('❌ Configuración de ImageService inválida:', validation.errors);
+    return res.status(500).json({
+      success: false,
+      message: 'Error de configuración del servicio de imágenes',
+      errors: validation.errors
+    });
+  }
+  
+  next();
+};
+
+module.exports = {
+  uploadMiddleware,
+  uploadRecipeImage,
+  uploadRecipeBase64,
+  handleRecipeImageUpload,
+  handleBase64ImageUpload,
+  cleanupImageOnError,
+  validateImageServiceConfig
 };
