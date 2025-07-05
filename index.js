@@ -8,8 +8,11 @@ const authRoutes = require('./src/routes/authRoutes')
 
 const app = express();
 
-app.use(bodyParser.json());
+
+
 app.use(cors());  
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true })); // ← AGREGA ESTA LÍNEA
 
 app.use('/api/receta', recetaRoutes);
 app.use('/api/usuario', usuarioRoutes);

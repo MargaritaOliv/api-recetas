@@ -1,6 +1,6 @@
 const db = require('../configs/db/db');
 const Receta = require('../models/recetaModel');
-const ImageService = require('../services/ImageService');
+const ImageService = require('../service/imagenService');
 
 class RecetaController {
 
