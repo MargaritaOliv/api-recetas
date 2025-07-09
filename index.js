@@ -8,11 +8,19 @@ const authRoutes = require('./src/routes/authRoutes')
 
 const app = express();
 
-
-
 app.use(cors());  
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true })); // ← AGREGA ESTA LÍNEA
+
+// 🚀 CONFIGURACIÓN PARA IMÁGENES GRANDES - CAMBIO PRINCIPAL
+app.use(bodyParser.json({ 
+  limit: '50mb',           // Aumentado para Base64 grandes
+  parameterLimit: 100000   // Más parámetros permitidos
+}));
+
+app.use(bodyParser.urlencoded({ 
+  limit: '50mb',           // Aumentado para formularios con imágenes
+  extended: true,
+  parameterLimit: 100000   // Más parámetros permitidos
+})); 
 
 app.use('/api/receta', recetaRoutes);
 app.use('/api/usuario', usuarioRoutes);
