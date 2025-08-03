@@ -1,13 +1,26 @@
+// service/firebaseService.js
 const admin = require('firebase-admin');
 const path = require('path');
 
-const serviceAccount = require(path.join(__dirname, '../configs/apprecetas-2d5d3-firebase-adminsdk-fbsvc-817aa0b205.json'));
+// Función para inicializar Firebase
+const initializeFirebase = () => {
+  try {
+    console.log('🔥 Inicializando Firebase Service...');
+    
+    const serviceAccount = require(path.join(__dirname, '../configs/apprecetas-2d5d3-firebase-adminsdk-fbsvc-817aa0b205.json'));
 
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-  });
-}
+    if (!admin.apps.length) {
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+      });
+      console.log('✅ Firebase Admin SDK inicializado correctamente');
+    } else {
+      console.log('✅ Firebase Admin SDK ya estaba inicializado');
+    }
+  } catch (error) {
+    console.error('❌ Error inicializando Firebase:', error.message);
+  }
+};
 
 class FirebaseService {
   
@@ -53,7 +66,6 @@ class FirebaseService {
     }
   }
 
-  // Enviar a un dispositivo específico
   static async enviarADispositivo(fcmToken, titulo, mensaje) {
     try {
       const message = {
@@ -78,4 +90,5 @@ class FirebaseService {
   }
 }
 
-module.exports = FirebaseService;
+// EXPORTAR AMBOS
+module.exports = { FirebaseService, initializeFirebase };

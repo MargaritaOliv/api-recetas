@@ -1,6 +1,5 @@
-// controllers/notificationController.js
 const FirebaseService = require('../service/firebaseService');
-const db = require('../configs/db');
+const db = require('../configs/db/db');
 
 class NotificationController {
 

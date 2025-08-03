@@ -1,8 +1,9 @@
 const jwt = require('jsonwebtoken');
-const UsuarioController = require('../controllers/usuarioController');
+const db = require('../configs/db/db');
 
 const adminMiddleware = async (req, res, next) => {
   try {
+    // Obtener token del header
     const token = req.header('Authorization')?.replace('Bearer ', '');
     
     if (!token) {
@@ -12,17 +13,23 @@ const adminMiddleware = async (req, res, next) => {
       });
     }
 
+    // Verificar el token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
-    const usuario = await UsuarioController.obtenerUsuarioPorIdInterno(decoded.id);
+    // Obtener usuario de la base de datos directamente
+    const query = 'SELECT * FROM usuarios WHERE id = ?';
+    const [rows] = await db.execute(query, [decoded.id]);
     
-    if (!usuario) {
+    if (rows.length === 0) {
       return res.status(401).json({ 
         success: false, 
         message: 'Usuario no encontrado' 
       });
     }
 
+    const usuario = rows[0];
+
+    // Verificar que sea admin
     if (usuario.rol !== 'admin') {
       return res.status(403).json({ 
         success: false, 
@@ -30,10 +37,12 @@ const adminMiddleware = async (req, res, next) => {
       });
     }
 
+    // Agregar usuario a la request
     req.usuario = usuario;
     next();
 
   } catch (error) {
+    console.error('Error en adminMiddleware:', error);
     return res.status(401).json({ 
       success: false, 
       message: 'Token inválido' 
