@@ -14,7 +14,11 @@ const app = express();
 
 initializeFirebase();
 
-app.use(cors());  
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(bodyParser.json({ limit: '50mb', parameterLimit: 100000 }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true, parameterLimit: 100000 })); 
 
