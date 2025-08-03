@@ -5,26 +5,28 @@ const cors = require('cors');
 const recetaRoutes = require('./src/routes/recetaRoutes');
 const usuarioRoutes = require('./src/routes/usuarioRoutes');
 const authRoutes = require('./src/routes/authRoutes')
+const notificationRoutes = require('./routes/notificationRoutes');
+
 
 const app = express();
 
 app.use(cors());  
 
-// 🚀 CONFIGURACIÓN PARA IMÁGENES GRANDES - CAMBIO PRINCIPAL
 app.use(bodyParser.json({ 
-  limit: '50mb',           // Aumentado para Base64 grandes
-  parameterLimit: 100000   // Más parámetros permitidos
+  limit: '50mb',           
+  parameterLimit: 100000   
 }));
 
 app.use(bodyParser.urlencoded({ 
-  limit: '50mb',           // Aumentado para formularios con imágenes
+  limit: '50mb',           
   extended: true,
-  parameterLimit: 100000   // Más parámetros permitidos
+  parameterLimit: 100000   
 })); 
 
 app.use('/api/receta', recetaRoutes);
 app.use('/api/usuario', usuarioRoutes);
 app.use('/api/auth', authRoutes)
+app.use('/api/notifications', notificationRoutes);
 
 const PORT = process.env.PORT;
 

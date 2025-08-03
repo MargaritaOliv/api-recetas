@@ -1,4 +1,3 @@
-// test-s3.js - Crear este archivo en la raíz de tu proyecto
 require('dotenv').config();
 const AWS = require('aws-sdk');
 
@@ -11,7 +10,6 @@ console.log('AWS_SESSION_TOKEN:', process.env.AWS_SESSION_TOKEN ? process.env.AW
 console.log('AWS_REGION:', process.env.AWS_REGION || 'NO DEFINIDA');
 console.log('');
 
-// Configurar S3
 const s3 = new AWS.S3({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
@@ -20,7 +18,6 @@ const s3 = new AWS.S3({
   signatureVersion: 'v4'
 });
 
-// Probar conexión
 async function testS3() {
   try {
     console.log('🔍 Probando listado de buckets...');
@@ -28,7 +25,6 @@ async function testS3() {
     console.log('✅ Conexión exitosa!');
     console.log('📦 Buckets encontrados:', buckets.Buckets.map(b => b.Name));
     
-    // Verificar si existe tu bucket específico
     const bucketExists = buckets.Buckets.some(b => b.Name === 'mi-app-recetas-2025');
     if (bucketExists) {
       console.log('✅ El bucket "mi-app-recetas-2025" existe');

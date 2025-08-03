@@ -1,3 +1,15 @@
+# Variables de entorno
 .env
+
+# Dependencias
 node_modules/
+
+# Archivos temporales
 asda.js
+
+
+# Otros archivos
+*.log
+.DS_Store
+dist/
+build/
